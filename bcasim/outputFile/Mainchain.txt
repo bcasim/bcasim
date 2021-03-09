@@ -1,0 +1,6 @@
+node0: 4658
+node1: 875
+node2: 0
+node3: 0
+node4: 0
+合計: 5533

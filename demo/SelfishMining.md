@@ -1,0 +1,1 @@
+![](https://github.com/BCASim/BCASim/blob/main/pic/SelfishMining.gif)
