@@ -16,7 +16,7 @@ $ git clone https://github.com/BCASim/bcasim
 $ cd bcasim
 $ mvn clean install
 $ mvn compile
-$ java -cp target/bcasim-0.0.1-SNAPSHOT.jar src/main/java/jp/kota/bcasim/Main.java
+$ java -cp target/bcasim-0.0.1-SNAPSHOT.jar src/main/java/jp/kota/bcasim/main/Main.java
 ```
 
 ## 利用方法の詳細
