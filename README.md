@@ -27,11 +27,8 @@ See the usage document page.
 <br>
 It summarizes how to customize simulation parameters and attack scenarios.
 <br>
+in preparation
 <br>
-・[English document](https://github.com/BCASim/BCASim/blob/main/docs/english/doc.md)
- <br>
-・[日本語ドキュメント](https://github.com/BCASim/BCASim/blob/main/docs/japanese/doc.md)
-
 
 ## Experimental example
 The following is an example of an experiment conducted using a simulator. The solid line in the image plots the theoretical value, and the cross plots the simulation result. The left is an experiment targeting the attack success probability of Double Spending Attack. The right is an experiment targeting the block generation ratio of the Selfish Mining node.

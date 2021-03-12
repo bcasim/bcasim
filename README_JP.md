@@ -25,11 +25,8 @@ $ java -cp target/bcasim-0.0.1-SNAPSHOT.jar src/main/java/jp/kota/bcasim/main/Ma
 <br>
 シミュレーションパラメータや攻撃シナリオのカスタマイズ方法についてまとめています。
 <br>
+準備中
 <br>
-・[English document](https://github.com/BCASim/BCASim/blob/main/docs/english/doc.md)
- <br>
-・[日本語ドキュメント](https://github.com/BCASim/BCASim/blob/main/docs/japanese/doc.md)
-
 
 
 ## 実験例
