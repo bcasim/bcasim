@@ -34,7 +34,7 @@ $ java -cp target/bcasim-0.0.1-SNAPSHOT.jar src/main/java/jp/kota/bcasim/main/Ma
 <br>
 ・[English document](https://github.com/bcasim/bcasim/blob/main/docs/english/doc.md)
  <br>
-・[日本語ドキュメント](https://github.com/bcasim/bcasimblob/main/docs/japanese/doc.md)
+・[日本語ドキュメント](https://github.com/bcasim/bcasim/blob/main/docs/japanese/doc.md)
 
 
 ## 実験例

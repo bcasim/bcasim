@@ -1,1 +1,0 @@
-![](https://github.com/BCASim/BCASim/blob/main/pic/sample.gif)
