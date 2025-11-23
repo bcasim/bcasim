@@ -70,3 +70,7 @@ If you have any questions or comments, please feel free to contact us.
 BCASim is released under the terms of the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0).
 <br>
 Please refer to the [COPYING](https://github.com/bcasim/bcasim/blob/main/LICENSE) file.
+
+<div align="center">
+  <img src="https://komarev.com/ghpvc/?username=bcasim&style=flat-square&color=blue" alt="visitors" />
+</div>
