@@ -65,7 +65,7 @@ This is a demo that visualizes the simulation results of BCASim.
 ## Authors
 If you have any questions or comments, please feel free to contact us.
 * bigmakiinum@outlook.jp
-* http://www.jaist.ac.jp/is/labs/aoki-lab/index-e.html
+* https://github.com/resoto
 
 ## License
 BCASim is released under the terms of the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0).
