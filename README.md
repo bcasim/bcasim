@@ -2,28 +2,29 @@
 
 <div align="center"><img src="https://github.com/bcasim/bcasim/blob/main/pic/logo.png" width="400"/></div>
 
-# BCASim : Blockchain Attack Simulator
+# BCASim: Blockchain Attack Simulator
 
- BCASim is open sorce blockchain simulator for attack analysis. The user can freely change the node operation and protocol specifications. For example Double spending attack, Selfish mining, Sybil Attack.
+BCASim is an open-source blockchain simulator for attack analysis. Users can freely customize node operations and protocol specifications to simulate various scenarios, such as Double Spending Attacks, Selfish Mining, and Sybil Attacks.
 <br>
 <br>
 <div align="center"><img src="https://github.com/bcasim/bcasim/blob/main/pic/large-network.gif" width="90%"/></div>
 <br>
 
 ## Main Features
-* Customization function of node operation scenario.
-* Reproduction of the blockchain data structure required to reproduce the attack.
-* Addition of consensus building, difficulty adjustment, fork choice rules, etc.
-* Visualization of network structure and blockchain structure.
+* **Customizable Scenarios:** Flexible configuration of node operation scenarios.
+* **Realistic Data Structure:** Replicates the blockchain data structure required to simulate attacks.
+* **Protocol Implementation:** Includes consensus building, difficulty adjustment, and fork choice rules.
+* **Visualization:** Visualizes both the network topology and the blockchain structure.
 
 ## Quick Start
 
 ### Prerequisites
-* java (version 1.7+ )
-* Apache Maven (varsion 3.6.3)
+* Java (version 1.7+)
+* Apache Maven (version 3.6.3)
 
-### commands
-```
+### Installation & Usage
+
+```bash
 $ git clone https://github.com/bcasim/bcasim
 $ cd bcasim
 $ mvn clean install
