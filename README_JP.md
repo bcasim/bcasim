@@ -60,7 +60,7 @@ BCASimのシミュレーション結果を可視化したデモです。この�
 質問や意見などがございましたらこちらまでお気軽にご連絡ください。
 
 * bigmakiinum@outlook.jp
-* http://www.jaist.ac.jp/is/labs/aoki-lab/index.html
+* https://github.com/resoto
 
 ## ライセンス
 * [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)
