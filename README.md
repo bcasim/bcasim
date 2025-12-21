@@ -27,9 +27,8 @@ BCASim is an open-source blockchain simulator for attack analysis. Users can fre
 ```bash
 $ git clone https://github.com/bcasim/bcasim
 $ cd bcasim
-$ mvn clean install
-$ mvn compile
-$ java -cp target/bcasim-0.0.1-SNAPSHOT.jar src/main/java/jp/ac/jaist/bcasim/main/Main.java
+$ mvn clean package
+$ java -cp target/bcasim-0.0.1-SNAPSHOT.jar jp.kota.bcasim.main.Main
 ```
 
 ## For more detail

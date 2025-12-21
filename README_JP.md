@@ -20,9 +20,8 @@
 ```
 $ git clone https://github.com/bcasim/bcasim
 $ cd bcasim
-$ mvn clean install
-$ mvn compile
-$ java -cp target/bcasim-0.0.1-SNAPSHOT.jar src/main/java/jp/kota/bcasim/main/Main.java
+$ mvn clean package
+$ java -cp target/bcasim-0.0.1-SNAPSHOT.jar jp.kota.bcasim.main.Main
 ```
 
 ## 利用方法の詳細
