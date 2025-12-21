@@ -19,7 +19,7 @@ BCASim is an open-source blockchain simulator for attack analysis. Users can fre
 ## Quick Start
 
 ### Prerequisites
-* Java (version 1.7+)
+* Java (version 1.8+)
 * Apache Maven (version 3.6.3)
 
 ### Installation & Usage
