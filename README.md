@@ -14,7 +14,11 @@ BCASim is an open-source blockchain simulator for attack analysis. Users can fre
 * **Customizable Scenarios:** Flexible configuration of node operation scenarios.
 * **Realistic Data Structure:** Replicates the blockchain data structure required to simulate attacks.
 * **Protocol Implementation:** Includes consensus building, difficulty adjustment, and fork choice rules.
-* **Visualization:** Visualizes both the network topology and the blockchain structure.
+* **Batch experiments:** Sweep attack share, strategy and delay across seeds; run in parallel and resume verified results.
+* **Metrics and reports:** Export chain/reorg/transaction metrics, CSV comparisons and offline charts with confidence intervals.
+* **Transaction workload:** Generate reproducible transfers with account balances, nonces and branch-aware validation.
+* **Dynamic topology:** Schedule directed disconnections and reconnections with public-chain synchronization.
+* **Visualization:** Import local results, seek and step playback, inspect events, compare metrics and download experiment settings.
 
 ## Quick Start
 
@@ -37,7 +41,17 @@ Run reproducible experiments using configuration files and a seed. `--output` se
 java -jar target/bcasim-0.0.1-SNAPSHOT.jar --config examples/honest.properties --seed 42 --output runs/honest-42
 ```
 
-The `examples/` directory contains honest, selfish-mining, double-spending and simplified PoS experiments. See the [running, extension and migration guide](docs/english/doc.md).
+The `examples/` directory contains honest, selfish-mining, double-spending, simplified PoS, transaction-workload and partition experiments. See the [running, extension and migration guide](docs/english/doc.md).
+
+Run a parameter sweep and open the generated `runs/batch/report.html`:
+
+```sh
+java -jar target/bcasim-0.0.1-SNAPSHOT.jar --batch examples/batch-comparison.properties --output runs/batch --parallel 2
+# Resume interrupted work with the same plan and simulator version:
+java -jar target/bcasim-0.0.1-SNAPSHOT.jar --batch examples/batch-comparison.properties --output runs/batch --resume
+```
+
+See the [batch guide](docs/experiments-en.md), [metric definitions](docs/english/doc.md#metric-definitions), and [transaction model](docs/transaction-model.md). The built-in double-spending strategy measures branch races; it does not model merchant payments or transaction signatures.
 
 ## For more detail
 

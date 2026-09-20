@@ -9,7 +9,7 @@ public class PoW extends Consensus {
     public PoW(Node node, double hashrate) { super(node); setHashrate(hashrate); }
     public Block generateBlock(Block previousBlock, double startTime) {
         String hash = HashGenerator.generateHash(String.valueOf(node.getSimulation().getIdentityRandom().nextDouble()) + previousBlock.getHash());
-        Block block = new Block(hash, previousBlock, startTime + blocktime(), node, node.getTransactionPool().getTransactions());
+        Block block = new Block(hash, previousBlock, startTime + blocktime(), node, node.getTransactionPool().getTransactions(previousBlock));
         block.setPreviousBlock(previousBlock);
         return block;
     }

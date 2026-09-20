@@ -41,7 +41,12 @@ final class ResultRecords {
         record.put("time", String.valueOf(event.getEventTime()));
         record.put("type", event.getEventType());
         record.put("node", name(event.getNode()));
-        if (event instanceof ReceiveBlock) {
+        if (event instanceof jp.kota.bcasim.main.event.NetworkChange) {
+            jp.kota.bcasim.main.event.NetworkChange change = (jp.kota.bcasim.main.event.NetworkChange) event;
+            record.put("from", String.valueOf(change.getFromIndex()));
+            record.put("to", String.valueOf(change.getToIndex()));
+            record.put("action", change.getAction());
+        } else if (event instanceof ReceiveBlock) {
             ReceiveBlock received = (ReceiveBlock) event;
             addBlock(record, received.getBlock());
             record.put("from", name(received.getFrom()));
@@ -49,10 +54,10 @@ final class ResultRecords {
             addBlock(record, ((FoundBlock) event).getBlock());
         } else if (event instanceof ReceiveTransaction) {
             ReceiveTransaction received = (ReceiveTransaction) event;
-            record.put("hash", received.getTransaction().getTransactionHash());
+            addTransaction(record, received.getTransaction());
             record.put("from", name(received.getFrom()));
         } else if (event instanceof SendTransaction) {
-            record.put("hash", ((SendTransaction) event).getTransaction().getTransactionHash());
+            addTransaction(record, ((SendTransaction) event).getTransaction());
         }
         return record;
     }
@@ -61,6 +66,14 @@ final class ResultRecords {
         record.put("height", String.valueOf(block.getHeight()));
         record.put("miner", name(block.getMiner()));
         record.put("hash", block.getHash());
+    }
+
+    private static void addTransaction(Map<String, Object> record, Transaction transaction) {
+        record.put("hash", transaction.getTransactionHash());
+        record.put("accountFrom", transaction.getFrom());
+        record.put("accountTo", transaction.getTo());
+        record.put("value", transaction.getValue());
+        record.put("nonce", transaction.getNonce());
     }
 
     private static String name(Node node) {

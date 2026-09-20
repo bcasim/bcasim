@@ -27,7 +27,8 @@ final class ResultFiles {
         writeChain(directory, chain, config.getBlockReward());
         writeConfiguration(directory, config, network);
         writeReplayConfiguration(directory, config);
-        writeMatrix(directory, network.getAdjacencyMatrix());
+        writeMatrix(directory, "adjacencyMatrix.csv", network.getAdjacencyMatrix());
+        writeMatrix(directory, "initialAdjacencyMatrix.csv", config.getAdjacencyMatrix());
         writeMainchain(directory, chain, network);
         Map<String, Object> metrics = new LinkedHashMap<>();
         metrics.put("seed", config.getSeed());
@@ -48,6 +49,7 @@ final class ResultFiles {
         metrics.put("finalHeights", heights);
         // Order matches the row and column order of the final adjacencyMatrix.csv snapshot.
         metrics.put("finalNodes", nodes);
+        metrics.putAll(jp.kota.bcasim.main.SimulationMetrics.collect(network.getNodeList().get(0).getSimulation()));
         try (BufferedWriter writer = FileResultWriter.open(directory.resolve("metrics.json"))) {
             JsonWriter.write(writer, metrics);
             writer.newLine();
@@ -83,6 +85,11 @@ final class ResultFiles {
             setting(writer, "BLOCK_DELAY", config.getBlockDelay());
             setting(writer, "TRANSACTION_DELAY", config.getTransactionDelay());
             setting(writer, "TRANSACTION_SIZE", config.getTransactionSize());
+            setting(writer, "TRANSACTION_RATE", config.getTransactionRate());
+            setting(writer, "TRANSACTION_VALUE", config.getTransactionValue());
+            setting(writer, "INITIAL_BALANCE", config.getInitialBalance());
+            setting(writer, "OBSERVER_NODE", config.getObserverNode());
+            setting(writer, "NETWORK_CHANGES", config.toProperties().getProperty("network.changes"));
             setting(writer, "GENERATE_TRANSACTIONS", config.isGenerateTransactions());
             setting(writer, "NUMBER_OF_NODES", config.getNumberOfNodes());
             setting(writer, "FINAL_NUMBER_OF_NODES", nodes.size());
@@ -100,33 +107,9 @@ final class ResultFiles {
 
     /** Initial configuration can be loaded directly by --config; no wall-clock timestamp is added. */
     private static void writeReplayConfiguration(Path directory, SimulationConfig config) throws IOException {
-        Map<String, Object> values = new LinkedHashMap<>();
-        values.put("simulation.time", config.getSimulationTime());
-        values.put("seed", config.getSeed());
-        values.put("consensus", config.getConsensus());
-        values.put("block.interval", config.getBlockInterval());
-        values.put("block.size", config.getBlockSize());
-        values.put("block.reward", config.getBlockReward());
-        values.put("transaction.size", config.getTransactionSize());
-        values.put("transaction.generate", config.isGenerateTransactions());
-        values.put("network.blockDelay", config.getBlockDelay());
-        values.put("network.transactionDelay", config.getTransactionDelay());
-        StringBuilder weights = new StringBuilder();
-        for (double weight : config.getHashrates()) {
-            if (weights.length() > 0) weights.append(',');
-            weights.append(weight);
-        }
-        values.put("nodes.weights", weights);
-        values.put("nodes.strategies", String.join(",", config.getNodeStrategies()));
-        StringBuilder matrix = new StringBuilder();
-        for (int[] row : config.getAdjacencyMatrix()) {
-            if (matrix.length() > 0) matrix.append(';');
-            for (int i = 0; i < row.length; i++) {
-                if (i > 0) matrix.append(',');
-                matrix.append(row[i]);
-            }
-        }
-        values.put("network.matrix", matrix);
+        java.util.Properties properties = config.toProperties();
+        Map<String, Object> values = new java.util.TreeMap<>();
+        for (String key : properties.stringPropertyNames()) values.put(key, properties.getProperty(key));
         try (BufferedWriter writer = FileResultWriter.open(directory.resolve("configuration.properties"))) {
             writer.write("# Initial experiment configuration. Final topology is in adjacencyMatrix.csv.");
             writer.newLine();
@@ -144,8 +127,8 @@ final class ResultFiles {
         writer.newLine();
     }
 
-    private static void writeMatrix(Path directory, int[][] matrix) throws IOException {
-        try (BufferedWriter writer = FileResultWriter.open(directory.resolve("adjacencyMatrix.csv"))) {
+    private static void writeMatrix(Path directory, String filename, int[][] matrix) throws IOException {
+        try (BufferedWriter writer = FileResultWriter.open(directory.resolve(filename))) {
             for (int[] row : matrix) {
                 for (int column = 0; column < row.length; column++) {
                     if (column > 0) writer.write(',');

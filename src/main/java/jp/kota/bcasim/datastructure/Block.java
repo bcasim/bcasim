@@ -2,6 +2,7 @@ package jp.kota.bcasim.datastructure;
 
 
 import jp.kota.bcasim.main.node.Node;
+import jp.kota.bcasim.transaction.LedgerState;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -25,6 +26,7 @@ public class Block implements Cloneable{
 	private double receiveBlockTime;
 	
 	private double[] balanceList;
+	private LedgerState ledgerState;
 	
 	private Set<Node> transmittedNodes = new HashSet<>();
 	
@@ -45,7 +47,7 @@ public class Block implements Cloneable{
 		this.timestamp = timestamp;
 		this.height = height;
 		this.miner = miner;
-		this.transactionList = transactionList == null ? new ArrayList<Transaction>() : transactionList;
+		this.transactionList = transactionList == null ? new ArrayList<Transaction>() : new ArrayList<>(transactionList);
         this.balanceList = new double[miner == null ? 0 : miner.getSimulation().getConfig().getNumberOfNodes()];
 		this.nextBlocks = new ArrayList<Block>();
 	}
@@ -63,10 +65,13 @@ public class Block implements Cloneable{
 		this.timestamp = timestamp;
 		this.height = previousBlock.getHeight() + 1;
 		this.miner = miner;
-		this.transactionList = transactionList == null ? new ArrayList<Transaction>() : transactionList;
+		this.transactionList = transactionList == null ? new ArrayList<Transaction>() : new ArrayList<>(transactionList);
         this.balanceList = new double[miner == null ? 0 : miner.getSimulation().getConfig().getNumberOfNodes()];
 		
 		this.nextBlocks = new ArrayList<Block>();
+		if (previousBlock.getLedgerState() != null && miner != null)
+			setLedgerState(previousBlock.getLedgerState().applyBlock(this.transactionList,
+				miner.getName(), miner.getSimulation().getConfig().getBlockReward()));
 	}
 	
 	
@@ -120,7 +125,13 @@ public class Block implements Cloneable{
 	}
 	
 	public ArrayList<Transaction> getTransactionList(){
-		return transactionList;
+		return new ArrayList<>(transactionList);
+	}
+
+	public LedgerState getLedgerState() { return ledgerState; }
+	public void setLedgerState(LedgerState state) {
+		ledgerState = state;
+		if (state != null) balanceList = state.getBalances();
 	}
 	
 	public double[] getBalanceList() {
@@ -156,6 +167,7 @@ public class Block implements Cloneable{
 				block.getMiner(),
 				block.getTransactionList());
 		
+		cloneBlock.ledgerState = block.ledgerState;
 		cloneBlock.setBalanceList(block.getBalanceList());
 		cloneBlock.setTransmittedNodes(block.getTransmittedNodes());
 		return cloneBlock;

@@ -43,6 +43,10 @@ public final class Network {
     private void check(int from, int to) {
         if (from < 0 || to < 0 || from >= nodes.size() || to >= nodes.size()) throw new IllegalArgumentException("Unknown node index");
     }
+    public boolean isConnected(Node from, Node to) {
+        Integer a = indices.get(from.getName()), b = indices.get(to.getName());
+        return a != null && b != null && nodes.get(a) == from && nodes.get(b) == to && adjacencyMatrix[a][b] == 1;
+    }
     public double getBlockDelay() { return config.getBlockDelay(); }
     public double getTransactionDelay() { return config.getTransactionDelay(); }
     public int[][] getAdjacencyMatrix() {

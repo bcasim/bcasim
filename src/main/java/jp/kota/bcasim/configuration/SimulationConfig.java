@@ -6,6 +6,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
@@ -15,6 +18,9 @@ public final class SimulationConfig {
     private final double simulationTime, blockInterval, blockSize, blockReward;
     private final double transactionSize, blockDelay, transactionDelay;
     private final long seed;
+    private final double transactionRate, initialBalance;
+    private final int transactionValue, observerNode;
+    private final List<NetworkChangeSpec> networkChanges;
     private final String consensus;
     private final boolean generateTransactions;
     private final double[] hashrates;
@@ -30,6 +36,12 @@ public final class SimulationConfig {
         blockDelay = nonnegative("network.blockDelay", b.blockDelay);
         transactionDelay = nonnegative("network.transactionDelay", b.transactionDelay);
         seed = b.seed;
+        transactionRate = nonnegative("transaction.rate", b.transactionRate);
+        initialBalance = nonnegative("transaction.initialBalance", b.initialBalance);
+        transactionValue = b.transactionValue;
+        if (transactionValue <= 0) throw new IllegalArgumentException("transaction.value must be positive");
+        observerNode = b.observerNode;
+        networkChanges = Collections.unmodifiableList(new ArrayList<>(b.networkChanges));
         consensus = b.consensus;
         if (!"PoW".equals(consensus) && !"PoS".equals(consensus)) {
             throw new IllegalArgumentException("consensus must be PoW or PoS");
@@ -45,6 +57,9 @@ public final class SimulationConfig {
                 active = true;
             }
         }
+        if (observerNode < 0 || observerNode >= hashrates.length) throw new IllegalArgumentException("observer.node is outside the network");
+        if (generateTransactions && transactionRate > 0 && hashrates.length < 2) throw new IllegalArgumentException("Transaction generation requires at least two nodes");
+        for (NetworkChangeSpec change : networkChanges) change.validate(hashrates.length, simulationTime);
         if (!active) throw new IllegalArgumentException("At least one node must have positive weight");
         adjacencyMatrix = copy(b.adjacencyMatrix);
         if (adjacencyMatrix.length != hashrates.length) throw new IllegalArgumentException("Matrix and node counts differ");
@@ -72,7 +87,8 @@ public final class SimulationConfig {
         try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) { p.load(reader); }
         Set<String> allowed = new HashSet<>(Arrays.asList("simulation.time", "seed", "consensus", "block.interval",
             "block.size", "block.reward", "transaction.size", "transaction.generate", "network.blockDelay",
-            "network.transactionDelay", "nodes.weights", "nodes.strategies", "network.matrix"));
+            "network.transactionDelay", "nodes.weights", "nodes.strategies", "network.matrix",
+            "transaction.rate", "transaction.value", "transaction.initialBalance", "observer.node", "network.changes"));
         for (String key : p.stringPropertyNames()) {
             if (!allowed.contains(key)) throw new IllegalArgumentException("Unknown configuration key: " + key);
         }
@@ -108,6 +124,11 @@ public final class SimulationConfig {
             }
             b.adjacencyMatrix(matrix);
         }
+        if (p.containsKey("transaction.rate")) b.transactionRate(Double.parseDouble(p.getProperty("transaction.rate")));
+        if (p.containsKey("transaction.value")) b.transactionValue(Integer.parseInt(p.getProperty("transaction.value")));
+        if (p.containsKey("transaction.initialBalance")) b.initialBalance(Double.parseDouble(p.getProperty("transaction.initialBalance")));
+        if (p.containsKey("observer.node")) b.observerNode(Integer.parseInt(p.getProperty("observer.node")));
+        if (p.containsKey("network.changes")) b.networkChanges(NetworkChangeSpec.parse(p.getProperty("network.changes")));
         return b.build();
     }
 
@@ -137,6 +158,41 @@ public final class SimulationConfig {
     public double getTransactionSize() { return transactionSize; }
     public double getBlockDelay() { return blockDelay; }
     public double getTransactionDelay() { return transactionDelay; }
+    public double getTransactionRate() { return transactionRate; }
+    public int getTransactionValue() { return transactionValue; }
+    public double getInitialBalance() { return initialBalance; }
+    public int getObserverNode() { return observerNode; }
+    public List<NetworkChangeSpec> getNetworkChanges() { return networkChanges; }
+    /** Complete initial inputs; callers may sort keys for deterministic serialization. */
+    public Properties toProperties() {
+        Properties p = new Properties();
+        p.setProperty("seed", String.valueOf(seed));
+        p.setProperty("simulation.time", String.valueOf(simulationTime));
+        p.setProperty("consensus", consensus);
+        p.setProperty("block.interval", String.valueOf(blockInterval));
+        p.setProperty("block.size", String.valueOf(blockSize));
+        p.setProperty("block.reward", String.valueOf(blockReward));
+        p.setProperty("transaction.size", String.valueOf(transactionSize));
+        p.setProperty("transaction.generate", String.valueOf(generateTransactions));
+        p.setProperty("transaction.rate", String.valueOf(transactionRate));
+        p.setProperty("transaction.value", String.valueOf(transactionValue));
+        p.setProperty("transaction.initialBalance", String.valueOf(initialBalance));
+        p.setProperty("observer.node", String.valueOf(observerNode));
+        p.setProperty("network.blockDelay", String.valueOf(blockDelay));
+        p.setProperty("network.transactionDelay", String.valueOf(transactionDelay));
+        StringBuilder weights = new StringBuilder(), matrix = new StringBuilder(), changes = new StringBuilder();
+        for (double rate : hashrates) { if (weights.length() > 0) weights.append(','); weights.append(rate); }
+        for (int[] row : adjacencyMatrix) {
+            if (matrix.length() > 0) matrix.append(';');
+            for (int j = 0; j < row.length; j++) { if (j > 0) matrix.append(','); matrix.append(row[j]); }
+        }
+        for (NetworkChangeSpec change : networkChanges) { if (changes.length() > 0) changes.append(';'); changes.append(change); }
+        p.setProperty("nodes.weights", weights.toString());
+        p.setProperty("nodes.strategies", String.join(",", nodeStrategies));
+        p.setProperty("network.matrix", matrix.toString());
+        p.setProperty("network.changes", changes.toString());
+        return p;
+    }
     public long getSeed() { return seed; }
     public String getConsensus() { return consensus; }
     public boolean isGenerateTransactions() { return generateTransactions; }
@@ -149,6 +205,9 @@ public final class SimulationConfig {
         private double simulationTime = 100000, blockInterval = 10, blockSize = 8, blockReward = 10;
         private double transactionSize = 1, blockDelay = 0, transactionDelay = 15;
         private long seed = 1;
+        private double transactionRate = 0, initialBalance = 1000;
+        private int transactionValue = 1, observerNode = 0;
+        private List<NetworkChangeSpec> networkChanges = new ArrayList<>();
         private String consensus = "PoW";
         private boolean generateTransactions = true;
         private double[] hashrates = {0.48, 0.52};
@@ -161,6 +220,8 @@ public final class SimulationConfig {
             transactionDelay = c.transactionDelay; seed = c.seed; consensus = c.consensus;
             generateTransactions = c.generateTransactions; hashrates = c.getHashrates();
             adjacencyMatrix = c.getAdjacencyMatrix(); nodeStrategies = c.getNodeStrategies();
+            transactionRate = c.transactionRate; initialBalance = c.initialBalance; transactionValue = c.transactionValue;
+            observerNode = c.observerNode; networkChanges = new ArrayList<>(c.networkChanges);
         }
         public Builder simulationTime(double v) { simulationTime = v; return this; }
         public Builder blockInterval(double v) { blockInterval = v; return this; }
@@ -169,6 +230,11 @@ public final class SimulationConfig {
         public Builder transactionSize(double v) { transactionSize = v; return this; }
         public Builder blockDelay(double v) { blockDelay = v; return this; }
         public Builder transactionDelay(double v) { transactionDelay = v; return this; }
+        public Builder transactionRate(double v) { transactionRate = v; return this; }
+        public Builder transactionValue(int v) { transactionValue = v; return this; }
+        public Builder initialBalance(double v) { initialBalance = v; return this; }
+        public Builder observerNode(int v) { observerNode = v; return this; }
+        public Builder networkChanges(List<NetworkChangeSpec> v) { networkChanges = new ArrayList<>(v); return this; }
         public Builder seed(long v) { seed = v; return this; }
         public Builder consensus(String v) { consensus = v; return this; }
         public Builder generateTransactions(boolean v) { generateTransactions = v; return this; }

@@ -13,6 +13,7 @@ public class Transaction {
 	private String from;
 	private String to;
 	private int value;
+	private final long nonce;
 	private String transactionHash;
 	private int id;
 	
@@ -23,12 +24,17 @@ public class Transaction {
 			String to,
 			int value,
 			String transactionHash) {
+		this(from, to, value, 0, transactionHash);
+	}
+
+	public Transaction(String from, String to, int value, long nonce, String transactionHash) {
 		
 		this.from = from;
 		this.to = to;
 		this.value = value;
 		if (transactionHash == null || transactionHash.isEmpty()) throw new IllegalArgumentException("A transaction hash is required");
-        if (from == null || to == null || value < 0) throw new IllegalArgumentException("Invalid transaction");
+        if (from == null || to == null || value < 0 || nonce < 0) throw new IllegalArgumentException("Invalid transaction");
+        this.nonce = nonce;
         this.transactionHash = transactionHash;
 		
 	}
@@ -44,6 +50,8 @@ public class Transaction {
 	public int getValue() {
 		return this.value;
 	}
+
+	public long getNonce() { return nonce; }
 	
 	public String getTransactionHash() {
 		return this.transactionHash;

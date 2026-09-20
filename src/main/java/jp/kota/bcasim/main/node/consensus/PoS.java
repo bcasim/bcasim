@@ -14,7 +14,7 @@ public class PoS extends Consensus {
     }
     public Block generateBlock(Block previousBlock, double startTime) {
         String hash = HashGenerator.generateHash(String.valueOf(node.getSimulation().getIdentityRandom().nextDouble()) + previousBlock.getHash());
-        Block block = new Block(hash, previousBlock, startTime + blocktime(), node, node.getTransactionPool().getTransactions());
+        Block block = new Block(hash, previousBlock, startTime + blocktime(), node, node.getTransactionPool().getTransactions(previousBlock));
         block.setPreviousBlock(previousBlock);
         return block;
     }

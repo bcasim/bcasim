@@ -14,7 +14,11 @@
 * ノードの動作シナリオのカスタマイズ機能。
 * 攻撃の再現に必要なブロックチェーンのデータ構造の再現。
 * 合意形成や難易度調節、フォークチョイスルールなどの追加。
-* ネットワーク構造とブロックチェーン構造の可視化。
+* seed・攻撃比率・戦略・遅延を組み合わせた一括実験、並列実行、検証済み結果からの再開。
+* チェーン・再編・取引の指標、比較CSV、信頼区間つきHTMLレポート。
+* 残高・連番・分岐ごとの検証に対応したトランザクション自動生成。
+* 時刻指定の接続切断・再接続と公開チェーンの同期。
+* 結果ファイル読み込み、時刻移動、ステップ再生、詳細表示、指標比較、設定作成に対応した可視化。
 
 ## クイックスタート
 ```
@@ -30,7 +34,17 @@ $ java -jar target/bcasim-0.0.1-SNAPSHOT.jar --config examples/selfish-mining.pr
 java -jar target/bcasim-0.0.1-SNAPSHOT.jar --config examples/honest.properties --seed 42 --output runs/honest-42
 ```
 
-通常ノード・Selfish Mining・Double Spending・簡易PoSの設定例を`examples/`に用意しています。[実行・拡張・移行ガイド](docs/japanese/doc.md)を参照してください。
+通常ノード・Selfish Mining・Double Spending・簡易PoS・トランザクション生成・ネットワーク分断の設定例を`examples/`に用意しています。[実行・拡張・移行ガイド](docs/japanese/doc.md)を参照してください。
+
+一括実験を実行すると、`runs/batch/report.html`に比較グラフを出力します。
+
+```sh
+java -jar target/bcasim-0.0.1-SNAPSHOT.jar --batch examples/batch-comparison.properties --output runs/batch --parallel 2
+# 同じ計画・同じシミュレータのバージョンで中断後に再開
+java -jar target/bcasim-0.0.1-SNAPSHOT.jar --batch examples/batch-comparison.properties --output runs/batch --resume
+```
+
+[一括実験ガイド](docs/experiments-ja.md)、[指標の定義](docs/japanese/doc.md#指標の定義)、[台帳モデル](docs/transaction-model.md)も参照してください。組み込みDouble Spendingは分岐間の競争を扱い、店舗の決済や署名まではモデル化していません。
 
 ## 利用方法の詳細
 

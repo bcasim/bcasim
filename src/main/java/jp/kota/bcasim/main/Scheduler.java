@@ -25,6 +25,7 @@ public final class Scheduler {
     }
     public void processEvent() {
         while (!eventList.isEmpty()) {
+            if (Thread.currentThread().isInterrupted()) throw new java.util.concurrent.CancellationException("Simulation interrupted");
             // Check before dequeue/record: the trace only contains executed events.
             if (eventList.peekEvent().getEventTime() > simulation.getConfig().getSimulationTime()) {
                 // Retain historical final publication, at the last processed time.

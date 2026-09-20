@@ -16,7 +16,8 @@ import jp.kota.bcasim.tool.fileio.ResultWriter;
 /** All mutable state and random streams belong to one experiment. */
 public final class Simulation {
     private final SimulationConfig config;
-    private final Random miningRandom, identityRandom;
+    private final Random miningRandom, identityRandom, transactionRandom;
+    private final java.util.Map<String, Long> nextTransactionNonces = new java.util.HashMap<>();
     private final ResultWriter writer;
     private final ConsensusFactory consensusFactory;
     private final ForkChoice forkChoice;
@@ -37,6 +38,7 @@ public final class Simulation {
         this.forkChoice = Objects.requireNonNull(forkChoice, "forkChoice");
         miningRandom = new Random(config.getSeed());
         identityRandom = new Random(config.getSeed() ^ 0x5DEECE66DL);
+        transactionRandom = new Random(config.getSeed() ^ 0x5452414E53414354L);
         scheduler = new Scheduler(this);
         network = new Network(config);
         blockchain = new Blockchain(this, "main", null);
@@ -49,15 +51,24 @@ public final class Simulation {
         try (ResultWriter output = writer) {
             output.start(config, network);
             scheduler.InitEventList();
+            for (jp.kota.bcasim.configuration.NetworkChangeSpec change : config.getNetworkChanges())
+                scheduler.addNewEvent(new jp.kota.bcasim.main.event.NetworkChange(this, change));
+            jp.kota.bcasim.transaction.TransactionWorkload.schedule(this);
             scheduler.processEvent();
             output.finish(network);
             return new SimulationResult(config.getSeed(), scheduler.getSimulationTime(), scheduler.getProcessedEventCount(), network);
         }
     }
     public Transaction createTransaction(String from, String to, int value) {
-        return new Transaction(from, to, value, jp.kota.bcasim.tool.HashGenerator.generateHash(
-            from + ":" + to + ":" + value + ":" + identityRandom.nextLong()));
+        long nonce = nextTransactionNonces.getOrDefault(from, 0L);
+        nextTransactionNonces.put(from, Math.addExact(nonce, 1));
+        return createTransaction(from, to, value, nonce);
     }
+    public Transaction createTransaction(String from, String to, int value, long nonce) {
+        return new Transaction(from, to, value, nonce, jp.kota.bcasim.tool.HashGenerator.generateHash(
+            from + ":" + to + ":" + value + ":" + nonce + ":" + transactionRandom.nextLong()));
+    }
+    public Random getTransactionRandom() { return transactionRandom; }
     public SimulationConfig getConfig() { return config; }
     public Random getMiningRandom() { return miningRandom; }
     public Random getIdentityRandom() { return identityRandom; }
