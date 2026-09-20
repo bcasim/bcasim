@@ -20,9 +20,17 @@
 ```
 $ git clone https://github.com/bcasim/bcasim
 $ cd bcasim
-$ mvn clean package
-$ java -cp target/bcasim-0.0.1-SNAPSHOT.jar jp.kota.bcasim.main.Main
+$ mvn clean verify
+$ java -jar target/bcasim-0.0.1-SNAPSHOT.jar --config examples/selfish-mining.properties
 ```
+
+設定ファイルとseedを指定して、再現可能な実験を実行できます。`--output`で出力先を指定でき、既存の結果は上書きしません。出力の`configuration.properties`を`--config`へ渡すと再実行できます。JDK 17 / Maven 3で検証しています。
+
+```sh
+java -jar target/bcasim-0.0.1-SNAPSHOT.jar --config examples/honest.properties --seed 42 --output runs/honest-42
+```
+
+通常ノード・Selfish Mining・Double Spending・簡易PoSの設定例を`examples/`に用意しています。[実行・拡張・移行ガイド](docs/japanese/doc.md)を参照してください。
 
 ## 利用方法の詳細
 

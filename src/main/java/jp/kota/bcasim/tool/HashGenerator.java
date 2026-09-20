@@ -1,33 +1,23 @@
 package jp.kota.bcasim.tool;
 
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
-public class HashGenerator {
-	
-	private final static String MD2 = "MD2";
-	private final static String MD5 = "MD5";
-	private final static String SHA_1 = "SHA-1";
-	private final static String SHA_256 = "SHA-256";
-	private final static String SHA_384 = "SHA-384";
-	private final static String SHA_512 = "SHA-512";
-	
-	
-	public static String generateHash(String data) {
-		MessageDigest md = null;
-		StringBuilder sb = null;
-		try {
-	        md = MessageDigest.getInstance(SHA_256);
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	    }	
-		md.update(data.getBytes());
-	    sb = new StringBuilder();
-	    for (byte b : md.digest()) {
-	        String hex = String.format("%02x", b);
-	        sb.append(hex);
-	    }
-	    return sb.toString();
-		
-	}
-	
+public final class HashGenerator {
+    private HashGenerator() {}
+    public static String generateHash(String data) {
+        try {
+            byte[] bytes = MessageDigest.getInstance("SHA-256").digest(data.getBytes(StandardCharsets.UTF_8));
+            char[] hex = new char[bytes.length * 2];
+            String alphabet = "0123456789abcdef";
+            for (int i = 0; i < bytes.length; i++) {
+                hex[i * 2] = alphabet.charAt((bytes[i] & 255) >>> 4);
+                hex[i * 2 + 1] = alphabet.charAt(bytes[i] & 15);
+            }
+            return new String(hex);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 is unavailable", e);
+        }
+    }
 }

@@ -1,324 +1,102 @@
 package jp.kota.bcasim.main.node;
 
-
-import jp.kota.bcasim.datastructure.Block;
-import jp.kota.bcasim.datastructure.Blockchain;
-import jp.kota.bcasim.datastructure.Transaction;
-import jp.kota.bcasim.main.Scheduler;
-import jp.kota.bcasim.main.event.Event;
-import jp.kota.bcasim.main.event.FoundBlock;
-import jp.kota.bcasim.main.event.ReceiveBlock;
-import jp.kota.bcasim.main.event.ReceiveTransaction;
-import jp.kota.bcasim.main.node.consensus.Consensus;
-import jp.kota.bcasim.main.node.consensus.PoW;
-import jp.kota.bcasim.network.Network;
-import jp.kota.bcasim.tool.fileio.OutputResult;
-
 import java.util.ArrayList;
+import java.util.Objects;
+import jp.kota.bcasim.datastructure.*;
+import jp.kota.bcasim.main.Simulation;
+import jp.kota.bcasim.main.event.*;
+import jp.kota.bcasim.main.node.behavior.NodeBehavior;
+import jp.kota.bcasim.main.node.consensus.Consensus;
 
-/**
- * selfish mining
- */
+/** Node state and common transport/mining operations; decisions live in NodeBehavior. */
+public class Node {
+    private final Simulation simulation;
+    private final String nodeID;
+    private final Consensus consensus;
+    private final NodeBehavior behavior;
+    protected final Blockchain blockchain;
+    protected final ArrayList<Block> unpublishedBlocks = new ArrayList<>();
+    private final TransactionPool transactionPool;
 
-public abstract class Node {
-	
-	
-	
-	protected Blockchain blockchain;
-	private String nodeID;
-	private Consensus consensus;
-	protected ArrayList<Block> unpublishedBlocks;
-	private TransactionPool transactionPool;
-	
-
-	/**
-	 * Genesisブロック生成時に利用する
-	 */
-	public Node(String genesis) {
-		this.nodeID = genesis;
-	}
-	
-	/**
-	 * マイナーノード生成時に利用する
-	 */
-	public Node(String name, double hashrate) {
-		this.blockchain = new Blockchain(name,this);
-		this.nodeID = name;
-		this.consensus = new PoW(this, hashrate);
-		this.unpublishedBlocks = new ArrayList<Block>();
-		this.transactionPool = new TransactionPool();
-	}
-	
-	public double getHashrate() {
-		PoW _pow =  (PoW)this.consensus;
-		return _pow.getHashrate();
-	}
-	
-	
-	
-	public abstract void initNode(Event event);
-	
-	public abstract void receiveBlock(Event event);
-	
-	public abstract void foundBlock(Event event);
-	
-	public abstract void receiveTransaction(Event event);
-	
-	public abstract void sendTransaction(Event event);
-	
-	//public abstract void propagateTransaction(Event event);
-	
-	
-	//---------------------イベントの定義-----------------------------
-	//内生事象
-	//public abstract void PublishBlock();
-	//内生事象
-	//public abstract void PropagateBlock(Block block);
-	/**
-	 * 到着したブロックの伝送
-	 */
-	public void PropagateBlock(Block block) {
-		ArrayList<Node> nodeList =  Network.getAdjacencyNode(this.getName());
-		double delay = Network.getBlockDelay();
-		Block newBlock = block;
-		
-		for(int i = 0; i < nodeList.size(); i++) {
-			Node destinationNode = nodeList.get(i);
-			
-			if(block.verifyNode(destinationNode)) {
-				continue;
-			}		
-			
-			Event newEvent = new ReceiveBlock(Scheduler.getSimulationTime() + delay,destinationNode,newBlock,this);
-			Scheduler.addNewEvent(newEvent);
-			
-		}	
-	}
-	
-	public void PropagateTransaction(Transaction transaction) {
-		ArrayList<Node> nodeList =  Network.getAdjacencyNode(this.getName());
-		double delay = Network.getTransactionDelay();
-		Transaction newTransaction = transaction;
-		
-		for(int i = 0; i < nodeList.size(); i++) {
-			Node destinationNode = nodeList.get(i);
-			
-			if(transaction.verifyNode(destinationNode)) {
-				continue;
-			}		
-			Event newEvent = new ReceiveTransaction(Scheduler.getSimulationTime() + delay,destinationNode,newTransaction);
-			Scheduler.addNewEvent(newEvent);
-			
-		}	
-	}
-	
-	/**
-	 * 未公開ブロックの公開
-	 */
-	public void PublishBlock() {
-		ArrayList<Node> nodeList =  Network.getAdjacencyNode(this.getName());
-		
-		double delay = Network.getBlockDelay();
-		
-		for(int j=0;this.unpublishedBlocks.size()>j;j++){
-			Block newBlock = this.unpublishedBlocks.get(j);
-			this.addNewBlock(newBlock);
-			for(int i = 0; i < nodeList.size(); i++) {
-				
-				
-				Node destinationNode = nodeList.get(i);
-				
-				
-				//エラーチェック
-				if(this.getName().equals(destinationNode.getName())) {
-					System.out.println("Err自分に送信");
-					System.exit(0);
-				}
-				
-				//newBlock.setArriveBlockTime(Scheduler.getSimulationTime() + delay);
-				Event newEvent = new ReceiveBlock(Scheduler.getSimulationTime() + delay,destinationNode,newBlock,this);
-				Scheduler.addNewEvent(newEvent);
-			}
-		}
-		this.unpublishedBlocks = new ArrayList<Block>();
-	}
-	
-	
-	/**
-	 * ブロックの生成開始
-	 */
-	public void StartMining(Block block) {
-		double addBlockTime = block.getTimestamp();
-		Event newEvent = new FoundBlock(addBlockTime,this,block);
-		Scheduler.addNewEvent(newEvent);
-	}
-	/**
-	 * ブロックの生成停止
-	 */
-	public void StopMining() {
-		FoundBlock foundEvent = Scheduler.getFoundEvent(this);
-		if(foundEvent!=null) {
-			int eventID = foundEvent.getEventID();
-			Scheduler.removeEvent(eventID);
-		}
-	}
-	
-	
-	//--------------------------------------------------
-	
-	/**
-	 * 生成開始時刻を指定してブロック生成
-	 * receveBlockイベント発生自に使用
-	 */
-	public Block generateNewBlock(double startTime) {
-		Block previousBlock = blockchain.getLatestBlock();
-		if(unpublishedBlocks.size()!=0) {
-			System.exit(0);
-			if(unpublishedBlocks.get(unpublishedBlocks.size()-1).getHeight()>=previousBlock.getHeight()) {
-				previousBlock = unpublishedBlocks.get(unpublishedBlocks.size()-1);
-			}
-			
-		}
-		Block nextBlock = this.consensus.generateBlock(previousBlock,startTime);
-		
-		return nextBlock;
-	}
-	
-	/**
-	 * 新規ブロックの作成
-	 */
-	public Block generateNewBlock() {
-		Block previousBlock = blockchain.getLatestBlock();
-		
-		if(unpublishedBlocks.size()!=0) {
-			System.exit(0);
-			if(unpublishedBlocks.get(unpublishedBlocks.size()-1).getHeight()>=previousBlock.getHeight()) {
-				previousBlock = unpublishedBlocks.get(unpublishedBlocks.size()-1);
-				
-			}
-		}
-		Block nextBlock = this.consensus.generateBlock(previousBlock);
-		return nextBlock;
-	}
-	
-	/**
-	 * 親ブロックを指定してブロックを生成
-	 */
-	public Block generateNewBlock(Block previousBlock) {
-		
-		Block nextBlock = this.consensus.generateBlock(previousBlock);
-		
-		return nextBlock;
-	}
-	
-	
-	/**
-	 * 自ノードのブロックチェーンに新規ブロックを追加する
-	 */
-	public void addNewBlock(Block block) {
-		
-		
-		Scheduler.addBlock(block);
-		
-		Block cloneBlock = Block.cloneBlock(block);
-		this.blockchain.addBlock(cloneBlock);
-	}
-	
-	/**
-	 * トランザクションプールにトランザクションを追加
-	 */
-	public void addTransaction(Transaction transaction) {
-		this.transactionPool.addNewTransaction(transaction);
-	}
-	/**
-	 * トランザクションを取得
-	 */
-	public Transaction geTransaction() {
-		return this.transactionPool.popTransaction();
-	}
-	
-	
-	public Blockchain getBlockchain() {
-		return this.blockchain;
-	}
-	
-	public String getName() {
-		return this.nodeID;
-	}
-	
-	/**
-	 * Localchainに新規ブロックを追加
-	 */
-	public void addUnpublishedBlocks(Block block) {
-		this.unpublishedBlocks.add(block);
-	}
-	
-	/**
-	 * Localchainの最長ブロック高を返す
-	 */
-	public int getHeightunpublishedBlock() {
-		int height = -1;
-		if(this.unpublishedBlocks.size()!=0) {
-			height = this.unpublishedBlocks.get(0).getHeight();
-		}
-		return height;
-	}
-	
-	/**
-	 * 未公開を初期化する
-	 */
-	public void clearUnpublishedBlocks() {
-		this.unpublishedBlocks = new ArrayList<Block>();
-	}
-
-	
-	/**
-	 * 公開チェーンと非公開チェーンの差を調べる
-	 * vertex と edge
-	 */
-	public int getDifferenceLen(Block vertex) {
-		Block latestBlock = this.blockchain.getLatestBlock();
-		int local = 0;
-		if(vertex != null) {
-			local = vertex.getHeight();
-		}
-		if(this.unpublishedBlocks.size()!=0) {
-			Block unpublishedBlock = this.unpublishedBlocks.get(this.unpublishedBlocks.size()-1);
-			local = unpublishedBlock.getHeight();
-		}
-		return local - latestBlock.getHeight();
-	}
-	/**
-	 * Publicチェーンの分岐からの長さを返す
-	 */
-	public int getPublicBranch(Block vertex) {
-		
-		int local = vertex.getHeight();
-		if(this.unpublishedBlocks.size()!=0) {
-			Block unpublishedBlock = this.unpublishedBlocks.get(this.unpublishedBlocks.size()-1);
-			local = unpublishedBlock.getHeight();
-		}
-		return local - vertex.getHeight();
-	}
-	
-	/**
-	 * Privateチェーンの分岐からの長さを返す
-	 */
-	public int getPrivateBranch(Block vertex) {
-		Block latestBlock = this.blockchain.getLatestBlock();
-		return latestBlock.getHeight() - vertex.getHeight();
-	}
-	
-	/**
-	 * ログを出力
-	 */
-	public void outputLog(String log) {
-		OutputResult.outAttackLog(log);
-	}
-	
-	public TransactionPool getTransactionPool() {
-		return this.transactionPool;
-	}
-	
-	
+    public Node(Simulation simulation, String name, double weight, NodeBehavior behavior) {
+        this.simulation = Objects.requireNonNull(simulation, "simulation");
+        this.nodeID = Objects.requireNonNull(name, "name");
+        if (name.isEmpty() || !Double.isFinite(weight) || weight < 0) throw new IllegalArgumentException("Invalid node configuration");
+        this.behavior = Objects.requireNonNull(behavior, "behavior");
+        blockchain = new Blockchain(simulation, name, this);
+        transactionPool = new TransactionPool(simulation.getConfig());
+        consensus = Objects.requireNonNull(simulation.getConsensusFactory().create(this, weight), "consensus");
+    }
+    /** Genesis is a per-run identity, without a recursively constructed ledger. */
+    protected Node(Simulation simulation, String name) {
+        this.simulation = simulation; nodeID = name;
+        behavior = new NodeBehavior() {}; blockchain = null; transactionPool = null; consensus = null;
+    }
+    public void initNode(Event event) { behavior.initialize(this); }
+    public void receiveBlock(Event event) { behavior.receiveBlock(this, (ReceiveBlock) event); }
+    public void foundBlock(Event event) { behavior.foundBlock(this, (FoundBlock) event); }
+    public void receiveTransaction(Event event) { behavior.receiveTransaction(this, (ReceiveTransaction) event); }
+    public void sendTransaction(Event event) { behavior.sendTransaction(this, (SendTransaction) event); }
+    public Simulation getSimulation() { return simulation; }
+    public double now() { return simulation.getScheduler().getSimulationTime(); }
+    public double getHashrate() { return consensus == null ? 0 : consensus.getWeight(); }
+    public boolean canMine() { return getHashrate() > 0; }
+    public Consensus getConsensus() { return consensus; }
+    public NodeBehavior getBehavior() { return behavior; }
+    public void PropagateBlock(Block block) {
+        for (Node destination : simulation.getNetwork().getAdjacencyNode(nodeID)) {
+            if (!block.verifyNode(destination)) simulation.getScheduler().addNewEvent(
+                new ReceiveBlock(now() + simulation.getNetwork().getBlockDelay(), destination, block, this));
+        }
+    }
+    public void PropagateTransaction(Transaction transaction) {
+        for (Node destination : simulation.getNetwork().getAdjacencyNode(nodeID)) {
+            if (!transaction.verifyNode(destination)) simulation.getScheduler().addNewEvent(
+                new ReceiveTransaction(now() + simulation.getNetwork().getTransactionDelay(), destination, transaction, this));
+        }
+    }
+    public void PublishBlock() {
+        for (Block block : unpublishedBlocks) {
+            addNewBlock(block);
+            for (Node destination : simulation.getNetwork().getAdjacencyNode(nodeID)) simulation.getScheduler().addNewEvent(
+                new ReceiveBlock(now() + simulation.getNetwork().getBlockDelay(), destination, block, this));
+        }
+        unpublishedBlocks.clear();
+    }
+    public void StartMining(Block block) {
+        if (canMine()) simulation.getScheduler().addNewEvent(new FoundBlock(block.getTimestamp(), this, block));
+    }
+    public void StopMining() {
+        FoundBlock event = simulation.getScheduler().getFoundEvent(this);
+        if (event != null) simulation.getScheduler().removeEvent(event.getEventID());
+    }
+    private Block publicTip() {
+        if (!unpublishedBlocks.isEmpty()) throw new IllegalStateException("Specify a private parent when mining unpublished blocks");
+        return blockchain.getLatestBlock();
+    }
+    public Block generateNewBlock(double startTime) { return consensus.generateBlock(publicTip(), startTime); }
+    public Block generateNewBlock() { return consensus.generateBlock(publicTip()); }
+    public Block generateNewBlock(Block parent) { return consensus.generateBlock(parent); }
+    public void addNewBlock(Block block) { simulation.getScheduler().addBlock(block); blockchain.addBlock(block); }
+    public void addTransaction(Transaction transaction) { transactionPool.addNewTransaction(transaction); }
+    public Transaction geTransaction() { return transactionPool.popTransaction(); }
+    public Blockchain getBlockchain() { return blockchain; }
+    public String getName() { return nodeID; }
+    public void addUnpublishedBlocks(Block block) { unpublishedBlocks.add(block); }
+    public int getHeightunpublishedBlock() { return unpublishedBlocks.isEmpty() ? -1 : unpublishedBlocks.get(0).getHeight(); }
+    public void clearUnpublishedBlocks() { unpublishedBlocks.clear(); }
+    public int getDifferenceLen(Block vertex) {
+        int local = vertex == null ? 0 : vertex.getHeight();
+        if (!unpublishedBlocks.isEmpty()) local = unpublishedBlocks.get(unpublishedBlocks.size() - 1).getHeight();
+        return local - blockchain.getLatestBlock().getHeight();
+    }
+    /** Historical method name: private branch length from the fork point. */
+    public int getPublicBranch(Block vertex) {
+        int local = unpublishedBlocks.isEmpty() ? vertex.getHeight() : unpublishedBlocks.get(unpublishedBlocks.size() - 1).getHeight();
+        return local - vertex.getHeight();
+    }
+    /** Historical method name: public branch length from the fork point. */
+    public int getPrivateBranch(Block vertex) { return blockchain.getLatestBlock().getHeight() - vertex.getHeight(); }
+    public void outputLog(String message) { simulation.getWriter().recordAttack(message); }
+    public TransactionPool getTransactionPool() { return transactionPool; }
 }

@@ -16,7 +16,7 @@ public class BlockCache {
 	
 	public void addBlock(Block block) {
 		this.blockCache.add(block);
-		if(this.cacheSize <= this.blockCache.size()) {
+		if(this.cacheSize < this.blockCache.size()) {
 			this.blockCache.remove(0);
 		}
 	}
@@ -35,7 +35,7 @@ public class BlockCache {
 	}
 	
 	public Block serchHeight(int height) {
-		for(int i=0; this.blockCache.size() < i; i++) {
+		for(int i=0; this.blockCache.size() > i; i++) {
 			Block block = blockCache.get(this.blockCache.size()-i-1);
 			if(block.getHeight() == height) {
 				return block;

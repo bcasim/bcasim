@@ -2,7 +2,6 @@ package jp.kota.bcasim.datastructure;
 
 
 import jp.kota.bcasim.main.node.Node;
-import jp.kota.bcasim.tool.HashGenerator;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -28,8 +27,9 @@ public class Transaction {
 		this.from = from;
 		this.to = to;
 		this.value = value;
-		this.transactionHash = HashGenerator
-				.generateHash(from + to + value + String.valueOf(Math.random()));
+		if (transactionHash == null || transactionHash.isEmpty()) throw new IllegalArgumentException("A transaction hash is required");
+        if (from == null || to == null || value < 0) throw new IllegalArgumentException("Invalid transaction");
+        this.transactionHash = transactionHash;
 		
 	}
 	

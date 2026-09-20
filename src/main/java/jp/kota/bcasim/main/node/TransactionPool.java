@@ -1,55 +1,20 @@
 package jp.kota.bcasim.main.node;
 
-
-import jp.kota.bcasim.configuration.Configuration;
+import java.util.ArrayList;
+import jp.kota.bcasim.configuration.SimulationConfig;
 import jp.kota.bcasim.datastructure.Transaction;
 
-import java.util.ArrayList;
-
-
-
-public class TransactionPool {
-	
-	
-	
-	ArrayList<Transaction> transactionList;
-	
-	
-	
-	public TransactionPool() {
-		this.transactionList = new ArrayList<Transaction>();
-	}
-	
-	
-	
-	public void addNewTransaction(Transaction transaction) {
-		this.transactionList.add(transaction);
-	}
-	
-	
-	public ArrayList<Transaction> getTransactions() {
-		ArrayList<Transaction> transactions = new ArrayList<Transaction>();
-		if(transactionList.size()!=0) {
-			return transactions;
-		}
-		
-		for(int i=0;i<transactionList.size();i++) {
-			if(Configuration.BLOCK_SIZE/Configuration.TRANSACTION_SIZE<i) {
-				break;
-			}
-			transactions.add(transactionList.get(i));
-		}
-		return transactions;
-	}
-	
-	public Transaction popTransaction() {
-		if(transactionList.size()!=0) {
-			Transaction tx = transactionList.get(0);
-			//transactionList.remove(0);
-			return tx;
-		}else {
-			return null;
-		}
-	}
-
+public final class TransactionPool {
+    private final ArrayList<Transaction> transactions = new ArrayList<>();
+    private final int capacity;
+    public TransactionPool(SimulationConfig config) {
+        capacity = (int) Math.min(Integer.MAX_VALUE, Math.floor(config.getBlockSize() / config.getTransactionSize()));
+    }
+    public void addNewTransaction(Transaction transaction) { transactions.add(transaction); }
+    /** Snapshot selected transactions; mining does not consume pending transactions. */
+    public ArrayList<Transaction> getTransactions() {
+        return new ArrayList<>(transactions.subList(0, Math.min(capacity, transactions.size())));
+    }
+    /** Retains historical peek semantics. */
+    public Transaction popTransaction() { return transactions.isEmpty() ? null : transactions.get(0); }
 }

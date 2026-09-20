@@ -12,11 +12,16 @@ public class ReceiveTransaction extends Event{
 	
 	
 	public ReceiveTransaction(double eventTime,Node node,Transaction transaction) {
-		super(eventTime,node);
-		this.transaction = transaction;
+        this(eventTime, node, transaction, null);
 	}
 	
 	
+    public ReceiveTransaction(double eventTime, Node node, Transaction transaction, Node from) {
+        super(eventTime, node);
+        this.transaction = transaction;
+        this.from = from;
+    }
+
 	public void process() {
 		super.node.receiveTransaction(this);
 	}

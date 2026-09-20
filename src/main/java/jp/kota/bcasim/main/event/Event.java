@@ -6,9 +6,10 @@ import jp.kota.bcasim.main.node.Node;
 public abstract class Event {
 	
 	
-	protected int eventID;
-	protected double eventTime;
-	protected Node node;
+	private int eventID;
+	private boolean scheduled;
+	protected final double eventTime;
+	protected final Node node;
 	
 	
 	public Event(double eventTime,Node node) {
@@ -19,21 +20,39 @@ public abstract class Event {
 	public abstract void process();
 	
 	
-	public int getEventID() {
+	public final int getEventID() {
 		return eventID;
 	}
 	
 	
-	public double getEventTime() {
+	public final double getEventTime() {
 		return eventTime;
 	}
 	
-	public Node getNode() {
+	public final Node getNode() {
 		return this.node;
 	}
 	
-	public void setEventID(int eventID) {
+	/** Sets the scheduler-assigned ID before the event's first registration. */
+	public final void setEventID(int eventID) {
+		if (scheduled) {
+			throw new IllegalStateException("A registered event's ID cannot change");
+		}
 		this.eventID = eventID;
+	}
+
+	/**
+	 * Called by EventList on first registration to freeze this event's identity.
+	 * Event instances are single-use: create a new event to schedule another
+	 * occurrence, even after this event has been processed or cancelled.
+	 *
+	 * @throws IllegalStateException if this instance has already been registered
+	 */
+	public final void markScheduled() {
+		if (scheduled) {
+			throw new IllegalStateException("An event instance can only be scheduled once");
+		}
+		scheduled = true;
 	}
 	
 	public String getEventType() {

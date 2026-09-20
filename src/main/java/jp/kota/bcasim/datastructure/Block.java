@@ -1,9 +1,7 @@
 package jp.kota.bcasim.datastructure;
 
 
-import jp.kota.bcasim.configuration.Configuration;
 import jp.kota.bcasim.main.node.Node;
-import jp.kota.bcasim.tool.fileio.OutputResult;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -26,7 +24,7 @@ public class Block implements Cloneable{
 	
 	private double receiveBlockTime;
 	
-	private double[] balanceList = new double[Configuration.NUMBER_OF_NODES];
+	private double[] balanceList;
 	
 	private Set<Node> transmittedNodes = new HashSet<>();
 	
@@ -47,7 +45,8 @@ public class Block implements Cloneable{
 		this.timestamp = timestamp;
 		this.height = height;
 		this.miner = miner;
-		this.transactionList = transactionList;
+		this.transactionList = transactionList == null ? new ArrayList<Transaction>() : transactionList;
+        this.balanceList = new double[miner == null ? 0 : miner.getSimulation().getConfig().getNumberOfNodes()];
 		this.nextBlocks = new ArrayList<Block>();
 	}
 	
@@ -64,7 +63,8 @@ public class Block implements Cloneable{
 		this.timestamp = timestamp;
 		this.height = previousBlock.getHeight() + 1;
 		this.miner = miner;
-		this.transactionList = transactionList;
+		this.transactionList = transactionList == null ? new ArrayList<Transaction>() : transactionList;
+        this.balanceList = new double[miner == null ? 0 : miner.getSimulation().getConfig().getNumberOfNodes()];
 		
 		this.nextBlocks = new ArrayList<Block>();
 	}
@@ -141,7 +141,10 @@ public class Block implements Cloneable{
 		System.out.println("}");
 	}
 	
-	public static Block cloneBlock(Block block) {
+	/** Clone chain-local links/receipt time while sharing transaction, balance and propagation state.
+     * This sharing preserves the original network duplicate suppression semantics.
+     */
+    public static Block cloneBlock(Block block) {
 		if(block == null) {
 			return null;
 		}
@@ -167,10 +170,6 @@ public class Block implements Cloneable{
 	
 	public void addTransmittedNodes(Node node) {
 		
-		//ブロックを出力
-		if(this.transmittedNodes.isEmpty()) {
-			OutputResult.outBlockJson(this);
-		}
 		//電装済みノードに追加
 		this.transmittedNodes.add(node);
 	}

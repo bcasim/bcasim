@@ -24,3 +24,8 @@ hs_err_pid*
 
 
 .DS_Store
+
+# Build products and new experiment runs
+/target/
+/output-file-*/
+/runs/

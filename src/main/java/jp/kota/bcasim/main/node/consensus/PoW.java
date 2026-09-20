@@ -1,74 +1,28 @@
 package jp.kota.bcasim.main.node.consensus;
 
-import jp.kota.bcasim.configuration.Configuration;
 import jp.kota.bcasim.datastructure.Block;
-import jp.kota.bcasim.main.Scheduler;
 import jp.kota.bcasim.main.node.Node;
 import jp.kota.bcasim.tool.HashGenerator;
 
-
-
-public class PoW extends Consensus{
-	
-	private double hashrate;
-	
-	public PoW(Node node, double hashrate) {
-		super(node);
-		this.hashrate = hashrate;
-	}
-	
-	
-	//時間を指定してブロックを生成
-	public Block generateBlock(Block previousBlock, double startTime) {
-		String previoushash = previousBlock.getHash();
-		
-		
-		String randomString =String.valueOf(Math.random());
-		String hash = HashGenerator.generateHash(randomString + previoushash);
-		
-		double timestamp = startTime + this.blocktime();
-		
-		Block newBlock = new Block(hash, previousBlock, timestamp, this.node,this.node.getTransactionPool().getTransactions());
-		newBlock.setPreviousBlock(previousBlock);
-		return newBlock;
-	}
-	
-	//前のブロックを指定してブロックを生成
-	public Block generateBlock(Block previousBlock) {
-		
-		String previoushash = previousBlock.getHash();
-		
-		
-		String randomString =String.valueOf(Math.random());
-		String hash = HashGenerator.generateHash(randomString + previoushash);
-		
-		
-		
-		double timestamp = Scheduler.getSimulationTime() + this.blocktime();
-		
-		
-		
-		Block newBlock = new Block(hash, previousBlock, timestamp, this.node,this.node.getTransactionPool().getTransactions());
-		
-		newBlock.setPreviousBlock(previousBlock);
-		return newBlock;
-		
-	}
-	
-	private double blocktime() {
-		double lambda=0;
-		lambda = Configuration.BLOCK_INTERVAL / this.hashrate;
-		double time = -1.0 * lambda * Math.log(1.0 - Math.random());
-		return time;		
-	}
-	
-	
-	public void setHashrate(double hashrate) {
-		this.hashrate = hashrate;
-	}
-	
-	
-	public double getHashrate() {
-		return this.hashrate;
-	}
+public class PoW extends Consensus {
+    private double hashrate;
+    public PoW(Node node, double hashrate) { super(node); setHashrate(hashrate); }
+    public Block generateBlock(Block previousBlock, double startTime) {
+        String hash = HashGenerator.generateHash(String.valueOf(node.getSimulation().getIdentityRandom().nextDouble()) + previousBlock.getHash());
+        Block block = new Block(hash, previousBlock, startTime + blocktime(), node, node.getTransactionPool().getTransactions());
+        block.setPreviousBlock(previousBlock);
+        return block;
+    }
+    public Block generateBlock(Block previousBlock) { return generateBlock(previousBlock, node.now()); }
+    private double blocktime() {
+        if (hashrate == 0) throw new IllegalStateException("A zero-weight node cannot mine");
+        double mean = node.getSimulation().getConfig().getBlockInterval() / hashrate;
+        return -mean * Math.log(1.0 - node.getSimulation().getMiningRandom().nextDouble());
+    }
+    public void setHashrate(double value) {
+        if (!Double.isFinite(value) || value < 0) throw new IllegalArgumentException("Invalid mining weight");
+        hashrate = value;
+    }
+    public double getHashrate() { return hashrate; }
+    public double getWeight() { return hashrate; }
 }

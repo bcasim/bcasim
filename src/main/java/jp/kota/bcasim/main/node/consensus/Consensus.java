@@ -13,6 +13,8 @@ public abstract class Consensus {
 	}
 	
 	
+	public abstract double getWeight();
+
 	public abstract Block generateBlock(Block previousBlock,double startTime);
 	
 	public abstract Block generateBlock(Block previousBlock);

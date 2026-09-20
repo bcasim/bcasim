@@ -19,17 +19,25 @@ BCASim is an open-source blockchain simulator for attack analysis. Users can fre
 ## Quick Start
 
 ### Prerequisites
-* Java (version 1.8+)
-* Apache Maven (version 3.6.3)
+* JDK 17 (validated; source/target compatibility remains Java 8)
+* Apache Maven 3
 
 ### Installation & Usage
 
 ```bash
 $ git clone https://github.com/bcasim/bcasim
 $ cd bcasim
-$ mvn clean package
-$ java -cp target/bcasim-0.0.1-SNAPSHOT.jar jp.kota.bcasim.main.Main
+$ mvn clean verify
+$ java -jar target/bcasim-0.0.1-SNAPSHOT.jar --config examples/selfish-mining.properties
 ```
+
+Run reproducible experiments using configuration files and a seed. `--output` selects a new results directory; existing results are never overwritten. Replay a run by passing its `configuration.properties` to `--config`. Validated with JDK 17 / Maven 3.
+
+```sh
+java -jar target/bcasim-0.0.1-SNAPSHOT.jar --config examples/honest.properties --seed 42 --output runs/honest-42
+```
+
+The `examples/` directory contains honest, selfish-mining, double-spending and simplified PoS experiments. See the [running, extension and migration guide](docs/english/doc.md).
 
 ## For more detail
 
